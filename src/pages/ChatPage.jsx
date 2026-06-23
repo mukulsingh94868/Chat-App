@@ -14,7 +14,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!username) {
-      navigate("/login");
+      navigate("/");
     }
   }, [navigate, username]);
 
