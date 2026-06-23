@@ -18,12 +18,10 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
   console.log('a user connected', socket.id);
 
-  // Listen for chat messages from this client
-  socket.on('chat-message', (msg) => {
-    // Broadcast to everyone (including sender)
+  socket.on('chat-message', ({ username, text }) => {
     io.emit('chat-message', {
-      id: socket.id,
-      message: msg,
+      username,
+      text,
     });
   });
 
