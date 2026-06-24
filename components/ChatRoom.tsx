@@ -28,8 +28,8 @@ const ChatRoom = ({
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-4 sm:px-6 lg:px-8">
+    <div className="h-svh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      <div className="mx-auto flex h-svh w-full max-w-6xl flex-col px-4 py-4 sm:px-6 lg:px-8">
         <ChatHeader username={username} lastSeen={lastSeen} />
 
         <main className="flex flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur">
@@ -38,10 +38,9 @@ const ChatRoom = ({
               <MessageList messages={messages} currentUsername={username} />
               <div ref={messageEndRef} />
             </div>
-
-            <MessageInput onSend={onSendMessage} />
           </section>
         </main>
+        <MessageInput onSend={onSendMessage} />
       </div>
     </div>
   );

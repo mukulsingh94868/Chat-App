@@ -1,5 +1,6 @@
 "use client";
 
+import { deleteCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 
 type TChatHeader = {
@@ -10,7 +11,7 @@ type TChatHeader = {
 const ChatHeader = ({ username, lastSeen }: TChatHeader) => {
   const router = useRouter();
   const handleLogout = () => {
-    localStorage.removeItem("chatUsername");
+    deleteCookie("authToken");
     router.push("/");
   };
   return (
