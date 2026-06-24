@@ -1,11 +1,18 @@
-import { useNavigate } from "react-router";
+"use client";
 
-export default function ChatHeader({ username, lastSeen }) {
-  const navigate = useNavigate();
+import { useRouter } from "next/navigation";
+
+type TChatHeader = {
+    username: string;
+    lastSeen: string;
+};
+
+const ChatHeader = ({ username, lastSeen }: TChatHeader) => {
+  const router = useRouter();
   const handleLogout = () => {
     localStorage.removeItem("chatUsername");
-    navigate("/");
-  }
+    router.push("/");
+  };
   return (
     <header className="mb-4 rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
       <div className="flex items-center justify-end cursor-pointer">
@@ -26,4 +33,6 @@ export default function ChatHeader({ username, lastSeen }) {
       </div>
     </header>
   );
-}
+};
+
+export default ChatHeader;

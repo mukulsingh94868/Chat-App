@@ -1,27 +1,36 @@
+"use client";
+
+import ChatRoom from "@/components/ChatRoom";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
-import { ChatRoom } from "../components";
 
-const socket = io(import.meta.env.VITE_API_URL);
+type ChatMessage = {
+  username: string;
+  text: string;
+};
 
-export default function ChatPage() {
-  const navigate = useNavigate();
+const socket = io("http://localhost:5000");
+// const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL);
+
+const Chat = () => {
+  const router = useRouter();
   const [username, setUsername] = useState(() => {
-    return localStorage.getItem("chatUsername") || "";
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem("chatUsername") || "";
   });
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
     if (!username) {
-      navigate("/");
+      router.push("/");
     }
-  }, [navigate, username]);
+  }, [router, username]);
 
   useEffect(() => {
     if (!username) return;
 
-    socket.on("chat-message", (payload) => {
+    socket.on("chat-message", (payload: ChatMessage) => {
       setMessages((prev) => [...prev, payload]);
     });
 
@@ -30,7 +39,7 @@ export default function ChatPage() {
     };
   }, [username]);
 
-  const handleSendMessage = (text) => {
+  const handleSendMessage = (text: string) => {
     if (!text || !username) return;
 
     socket.emit("chat-message", {
@@ -46,7 +55,6 @@ export default function ChatPage() {
   if (!username) {
     return null;
   }
-
   return (
     <ChatRoom
       username={username}
@@ -55,4 +63,6 @@ export default function ChatPage() {
       onSendMessage={handleSendMessage}
     />
   );
-}
+};
+
+export default Chat;

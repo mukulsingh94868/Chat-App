@@ -1,4 +1,16 @@
-export default function MessageList({ messages, currentUsername }) {
+import React from "react";
+
+type ChatMessage = {
+  username: string;
+  text: string;
+};
+
+type TMessageList = {
+  messages: ChatMessage[];
+  currentUsername: string;
+};
+
+const MessageList = ({ messages, currentUsername }: TMessageList) => {
   if (messages.length === 0) {
     return (
       <div className="flex h-full min-h-[400px] items-center justify-center">
@@ -14,7 +26,7 @@ export default function MessageList({ messages, currentUsername }) {
 
   return (
     <div className="space-y-3">
-      {messages.map((m, index) => {
+      {messages.map((m: ChatMessage, index: number) => {
         const isMe = m.username === currentUsername;
 
         return (
@@ -37,4 +49,6 @@ export default function MessageList({ messages, currentUsername }) {
       })}
     </div>
   );
-}
+};
+
+export default MessageList;

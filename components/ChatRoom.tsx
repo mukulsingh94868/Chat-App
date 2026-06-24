@@ -1,21 +1,32 @@
-import { useRef, useEffect } from "react";
-import ChatHeader from "./ChatHeader";
+import React, { useEffect, useRef } from "react";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
+import ChatHeader from "./ChatHeader";
 
-export default function ChatRoom({
+type ChatMessage = {
+  username: string;
+  text: string;
+};
+
+type TChatRoom = {
+  username: string;
+  messages: ChatMessage[];
+  lastSeen: string;
+  onSendMessage: (text: string) => void;
+};
+
+const ChatRoom = ({
   username,
   messages,
   lastSeen,
   onSendMessage,
-}) {
-  const messageEndRef = useRef(null);
+}: TChatRoom) => {
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-4 sm:px-6 lg:px-8">
@@ -34,4 +45,6 @@ export default function ChatRoom({
       </div>
     </div>
   );
-}
+};
+
+export default ChatRoom;

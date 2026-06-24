@@ -1,15 +1,18 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-export default function JoinForm({ onJoin }) {
+type TJoinForm = {
+    onJoin: (name: string) => void;
+}
+
+const JoinForm = ({ onJoin }: TJoinForm) => {
   const [nameInput, setNameInput] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = nameInput.trim();
     if (!trimmed) return;
     onJoin(trimmed);
   };
-
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
@@ -49,4 +52,6 @@ export default function JoinForm({ onJoin }) {
       </div>
     </div>
   );
-}
+};
+
+export default JoinForm;
