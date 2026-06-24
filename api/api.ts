@@ -1,7 +1,7 @@
 import axios, { type AxiosRequestConfig } from "axios";
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL,
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL_NEW,
 });
 
 type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
