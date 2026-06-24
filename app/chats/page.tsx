@@ -1,31 +1,49 @@
 "use client";
 
 import ChatRoom from "@/components/ChatRoom";
+import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
+import { jwtDecode } from "jwt-decode";
 
 type ChatMessage = {
   username: string;
   text: string;
 };
 
-const socket = io("http://localhost:5000");
-// const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL);
+type DecodedToken = {
+  id: string;
+  name: string;
+  email: string;
+  exp: number;
+};
+
+const socket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}`);
 
 const Chat = () => {
   const router = useRouter();
-  const [username, setUsername] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return window.localStorage.getItem("chatUsername") || "";
-  });
+
+  const [username, setUsername] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
-    if (!username) {
+    const token = getCookie("authToken");
+
+    if (!token) {
+      router.push("/");
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<DecodedToken>(token as string);
+      console.log('decoded', decoded);
+      setUsername(decoded.name);
+    } catch (error) {
+      console.error("Invalid token", error);
       router.push("/");
     }
-  }, [router, username]);
+  }, [router]);
 
   useEffect(() => {
     if (!username) return;
@@ -52,9 +70,8 @@ const Chat = () => {
     return messages.length ? "Live" : "No messages yet";
   }, [messages.length]);
 
-  if (!username) {
-    return null;
-  }
+  if (!username) return null;
+
   return (
     <ChatRoom
       username={username}

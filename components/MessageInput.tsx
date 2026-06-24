@@ -27,7 +27,7 @@ const MessageInput = ({ onSend }: TMessageInput) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="border-t border-white/10 bg-slate-950/40 p-4 sm:p-5"
+      className="border-t p-4 sm:p-5"
     >
       <div className="flex items-end gap-3">
         <div className="flex-1">
