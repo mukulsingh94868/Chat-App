@@ -1,3 +1,5 @@
+"use client";
+
 import { loginAuth, loginRegister } from "@/actions/authActions";
 import { setCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
@@ -47,7 +49,7 @@ const JoinForm = () => {
       const response: any = await apiCall(payload);
       console.log("res123", response);
 
-      if (response?.statusCode === 200) {
+      if (response?.statusCode === 200 || response?.statusCode === 201) {
         toast.success(response?.message);
         setEmailInput("");
         setNameInput("");
