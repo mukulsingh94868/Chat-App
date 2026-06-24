@@ -1,9 +1,15 @@
-import { useState } from "react";
+"use client";
 
-export default function MessageInput({ onSend }) {
+import React, { useState } from "react";
+
+type TMessageInput = {
+    onSend: (text: string) => void;
+}
+
+const MessageInput = ({ onSend }: TMessageInput) => {
   const [message, setMessage] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const text = message.trim();
     if (!text) return;
@@ -12,13 +18,12 @@ export default function MessageInput({ onSend }) {
     setMessage("");
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
   };
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -48,4 +53,6 @@ export default function MessageInput({ onSend }) {
       </div>
     </form>
   );
-}
+};
+
+export default MessageInput;
