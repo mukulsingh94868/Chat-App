@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 
 type TMessageInput = {
-    onSend: (text: string) => void;
-}
+  onSend: (text: string) => void;
+};
 
 const MessageInput = ({ onSend }: TMessageInput) => {
   const [message, setMessage] = useState("");
@@ -24,11 +24,9 @@ const MessageInput = ({ onSend }: TMessageInput) => {
       handleSubmit(e);
     }
   };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="border-t p-4 sm:p-5"
-    >
+    <form onSubmit={handleSubmit} className="border-t border-white/10 p-4 sm:p-5">
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-slate-500">
