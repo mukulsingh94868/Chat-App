@@ -1,8 +1,9 @@
-import React from "react";
-
 type ChatMessage = {
-  username: string;
+  roomId: string;
+  fromUserId: string;
+  fromUsername: string;
   text: string;
+  createdAt?: string;
 };
 
 type TMessageList = {
@@ -26,8 +27,8 @@ const MessageList = ({ messages, currentUsername }: TMessageList) => {
 
   return (
     <div className="space-y-3">
-      {messages.map((m: ChatMessage, index: number) => {
-        const isMe = m.username === currentUsername;
+      {messages.map((m, index) => {
+        const isMe = m.fromUsername === currentUsername;
 
         return (
           <div
@@ -40,9 +41,9 @@ const MessageList = ({ messages, currentUsername }: TMessageList) => {
               }`}
             >
               <div className="mb-1 flex items-center gap-2 text-xs opacity-80">
-                <span className="font-semibold">{m.username}</span>
+                <span className="font-semibold">{m.fromUsername}</span>
               </div>
-              <p className="text-sm leading-relaxed break-words">{m.text}</p>
+              <p className="break-words text-sm leading-relaxed">{m.text}</p>
             </div>
           </div>
         );

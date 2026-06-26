@@ -28,3 +28,17 @@ export const loginRegister = async (payload: Record<string, unknown>) => {
     console.error("error123", error);
   }
 };
+
+export const getUsersList = async () => {
+  try {
+    const cookieStore = await cookies();
+    const token = (await cookieStore.get("token")?.value) ?? "";
+    const response = await apiRequest("get", `auth/users`, {}, {
+      Authorization: `Bearer ${token ?? ""}`,
+    });
+    console.log('response2323', response);
+    return response ?? {};
+  } catch (error) {
+    console.error("error123", error);
+  }
+};
