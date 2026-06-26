@@ -15,6 +15,11 @@ type Props = {
   roomUnread: { [roomId: string]: number };
 };
 
+const makeRoomId = (a: string, b: string) => {
+  const [x, y] = [String(a), String(b)].sort();
+  return `dm:${x}:${y}`;
+};
+
 const UserList = ({
   users,
   currentUserId,
@@ -23,11 +28,6 @@ const UserList = ({
   onSelectUser,
   roomUnread,
 }: Props) => {
-  const makeRoomId = (a: string, b: string) => {
-    const [x, y] = [String(a), String(b)].sort();
-    return `dm:${x}:${y}`;
-  };
-
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-white/10 px-5 py-4">

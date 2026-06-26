@@ -3,7 +3,7 @@
 import ChatRoom from "@/components/ChatRoom";
 import { getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { jwtDecode } from "jwt-decode";
 
@@ -28,10 +28,6 @@ type DecodedToken = {
   exp: number;
 };
 
-type RoomMessages = {
-  [roomId: string]: ChatMessage[];
-};
-
 type RoomUnread = {
   [roomId: string]: number;
 };
@@ -39,6 +35,11 @@ type RoomUnread = {
 const socket: Socket = io(`${process.env.NEXT_PUBLIC_BASE_URL}`, {
   autoConnect: false,
 });
+
+const makeRoomId = (a: string, b: string) => {
+  const [x, y] = [String(a), String(b)].sort();
+  return `dm:${x}:${y}`;
+};
 
 const Chat = () => {
   const router = useRouter();
@@ -49,9 +50,16 @@ const Chat = () => {
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [roomId, setRoomId] = useState("");
-  const [roomMessages, setRoomMessages] = useState<RoomMessages>({});
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomUnread, setRoomUnread] = useState<RoomUnread>({});
 
+  const roomIdRef = useRef(roomId);
+
+  useEffect(() => {
+    roomIdRef.current = roomId;
+  }, [roomId]);
+
+  // 1) decode token
   useEffect(() => {
     const token = getCookie("authToken");
 
@@ -70,6 +78,7 @@ const Chat = () => {
     }
   }, [router]);
 
+  // 2) connect socket with auth
   useEffect(() => {
     if (!username || !userId) return;
 
@@ -84,49 +93,43 @@ const Chat = () => {
     };
   }, [username, userId]);
 
+  // 3) socket listeners (online, join, message)
   useEffect(() => {
     const handleOnlineUsers = (ids: string[]) => {
       setOnlineUserIds(ids);
     };
 
     const handleJoinedDm = ({ roomId }: { roomId: string }) => {
+      // this is the only active room now
       setRoomId(roomId);
+      setMessages([]); // clear previous messages (snapchat behavior)
+
+      // reset unread for this room
       setRoomUnread((prev) => ({
         ...prev,
         [roomId]: 0,
       }));
-
-      setRoomMessages((prev) => ({
-        ...prev,
-        [roomId]: prev[roomId] || [],
-      }));
     };
 
     const handleDmMessage = (payload: ChatMessage) => {
-      const incomingRoomId = payload.roomId;
+      const activeRoomId = roomIdRef.current;
 
-      setRoomMessages((prev) => {
-        const existing = prev[incomingRoomId] || [];
-        return {
+      // if message belongs to active room, show it
+      if (payload.roomId === activeRoomId) {
+        setMessages((prev) => [...prev, payload]);
+
+        // ensure unread is 0 for active room
+        setRoomUnread((prev) => ({
           ...prev,
-          [incomingRoomId]: [...existing, payload],
-        };
-      });
-
-      setRoomUnread((prev) => {
-        if (incomingRoomId === roomId) {
-          return {
-            ...prev,
-            [incomingRoomId]: 0,
-          };
-        }
-
-        const currentCount = prev[incomingRoomId] || 0;
-        return {
+          [payload.roomId]: 0,
+        }));
+      } else {
+        // message for another room -> increase unread badge
+        setRoomUnread((prev) => ({
           ...prev,
-          [incomingRoomId]: currentCount + 1,
-        };
-      });
+          [payload.roomId]: (prev[payload.roomId] || 0) + 1,
+        }));
+      }
     };
 
     socket.on("online-users", handleOnlineUsers);
@@ -138,17 +141,15 @@ const Chat = () => {
       socket.off("joined-dm", handleJoinedDm);
       socket.off("dm-message", handleDmMessage);
     };
-  }, [roomId]);
+  }, []);
 
+  // 4) fetch all users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL_NEW}auth/users`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/users`
         );
-        // const res = await fetch(
-        //   `http://localhost:5000/api/auth/users`
-        // );
         const data = await res.json();
         setUsers(data.data || []);
       } catch (error) {
@@ -159,17 +160,24 @@ const Chat = () => {
     if (username) fetchUsers();
   }, [username]);
 
+  // 5) when selectedUser changes, join DM + clear messages
   useEffect(() => {
     if (!selectedUser) return;
+
+    // clear visible chat (snapchat behavior)
+    setMessages([]);
+    setRoomId("");
+
     socket.emit("join-dm", { toUserId: selectedUser._id });
   }, [selectedUser]);
 
+  // 6) selecting user from sidebar
   const handleSelectUser = (user: User) => {
     if (user._id === userId) return;
     setSelectedUser(user);
-    setRoomId("");
   };
 
+  // 7) sending message only when roomId is ready
   const handleSendMessage = (text: string) => {
     if (!text || !roomId || !username) return;
 
@@ -178,11 +186,6 @@ const Chat = () => {
       text,
     });
   };
-
-  const currentRoomMessages = useMemo(() => {
-    if (!roomId) return [];
-    return roomMessages[roomId] || [];
-  }, [roomId, roomMessages]);
 
   const lastSeen = useMemo(() => {
     return onlineUserIds.length ? "Live" : "No users online";
@@ -197,11 +200,12 @@ const Chat = () => {
       users={users}
       selectedUser={selectedUser}
       onlineUserIds={onlineUserIds}
-      messages={currentRoomMessages}
+      messages={messages}
       lastSeen={lastSeen}
       onSelectUser={handleSelectUser}
       onSendMessage={handleSendMessage}
       roomUnread={roomUnread}
+      roomId={roomId}
     />
   );
 };
