@@ -2,10 +2,10 @@
 
 import ChatRoom from "@/components/ChatRoom";
 import { getCookie } from "cookies-next";
-import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { jwtDecode } from "jwt-decode";
 
 type User = {
   _id: string;
@@ -28,6 +28,14 @@ type DecodedToken = {
   exp: number;
 };
 
+type RoomMessages = {
+  [roomId: string]: ChatMessage[];
+};
+
+type RoomUnread = {
+  [roomId: string]: number;
+};
+
 const socket: Socket = io(`${process.env.NEXT_PUBLIC_BASE_URL}`, {
   autoConnect: false,
 });
@@ -41,7 +49,8 @@ const Chat = () => {
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [roomId, setRoomId] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [roomMessages, setRoomMessages] = useState<RoomMessages>({});
+  const [roomUnread, setRoomUnread] = useState<RoomUnread>({});
 
   useEffect(() => {
     const token = getCookie("authToken");
@@ -76,20 +85,48 @@ const Chat = () => {
   }, [username, userId]);
 
   useEffect(() => {
-    if (!socket.connected) return;
-
     const handleOnlineUsers = (ids: string[]) => {
       setOnlineUserIds(ids);
     };
 
     const handleJoinedDm = ({ roomId }: { roomId: string }) => {
       setRoomId(roomId);
-      setMessages([]);
+      setRoomUnread((prev) => ({
+        ...prev,
+        [roomId]: 0,
+      }));
+
+      setRoomMessages((prev) => ({
+        ...prev,
+        [roomId]: prev[roomId] || [],
+      }));
     };
 
     const handleDmMessage = (payload: ChatMessage) => {
-      if (payload.roomId !== roomId) return;
-      setMessages((prev) => [...prev, payload]);
+      const incomingRoomId = payload.roomId;
+
+      setRoomMessages((prev) => {
+        const existing = prev[incomingRoomId] || [];
+        return {
+          ...prev,
+          [incomingRoomId]: [...existing, payload],
+        };
+      });
+
+      setRoomUnread((prev) => {
+        if (incomingRoomId === roomId) {
+          return {
+            ...prev,
+            [incomingRoomId]: 0,
+          };
+        }
+
+        const currentCount = prev[incomingRoomId] || 0;
+        return {
+          ...prev,
+          [incomingRoomId]: currentCount + 1,
+        };
+      });
     };
 
     socket.on("online-users", handleOnlineUsers);
@@ -106,9 +143,14 @@ const Chat = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/auth/users`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL_NEW}auth/users`
+        );
+        // const res = await fetch(
+        //   `http://localhost:5000/api/auth/users`
+        // );
         const data = await res.json();
-        setUsers(data?.data || []);
+        setUsers(data.data || []);
       } catch (error) {
         console.error("Failed to fetch users", error);
       }
@@ -126,7 +168,6 @@ const Chat = () => {
     if (user._id === userId) return;
     setSelectedUser(user);
     setRoomId("");
-    setMessages([]);
   };
 
   const handleSendMessage = (text: string) => {
@@ -137,6 +178,11 @@ const Chat = () => {
       text,
     });
   };
+
+  const currentRoomMessages = useMemo(() => {
+    if (!roomId) return [];
+    return roomMessages[roomId] || [];
+  }, [roomId, roomMessages]);
 
   const lastSeen = useMemo(() => {
     return onlineUserIds.length ? "Live" : "No users online";
@@ -151,10 +197,11 @@ const Chat = () => {
       users={users}
       selectedUser={selectedUser}
       onlineUserIds={onlineUserIds}
-      messages={messages}
+      messages={currentRoomMessages}
       lastSeen={lastSeen}
       onSelectUser={handleSelectUser}
       onSendMessage={handleSendMessage}
+      roomUnread={roomUnread}
     />
   );
 };

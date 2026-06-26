@@ -12,6 +12,7 @@ type Props = {
   selectedUserId: string;
   onlineUserIds: string[];
   onSelectUser: (user: User) => void;
+  roomUnread: { [roomId: string]: number };
 };
 
 const UserList = ({
@@ -20,7 +21,13 @@ const UserList = ({
   selectedUserId,
   onlineUserIds,
   onSelectUser,
+  roomUnread,
 }: Props) => {
+  const makeRoomId = (a: string, b: string) => {
+    const [x, y] = [String(a), String(b)].sort();
+    return `dm:${x}:${y}`;
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-white/10 px-5 py-4">
@@ -39,6 +46,8 @@ const UserList = ({
             .map((user) => {
               const isOnline = onlineUserIds.includes(user._id);
               const isSelected = selectedUserId === user._id;
+              const dmRoomId = makeRoomId(currentUserId, user._id);
+              const unread = roomUnread[dmRoomId] || 0;
 
               return (
                 <button
@@ -61,6 +70,11 @@ const UserList = ({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {unread > 0 && (
+                        <span className="rounded-full bg-cyan-500 px-2 py-0.5 text-xs font-semibold text-slate-950">
+                          {unread}
+                        </span>
+                      )}
                       <span
                         className={`h-2.5 w-2.5 rounded-full ${
                           isOnline ? "bg-emerald-400" : "bg-slate-600"

@@ -28,6 +28,7 @@ type TChatRoom = {
   lastSeen: string;
   onSelectUser: (user: User) => void;
   onSendMessage: (text: string) => void;
+  roomUnread: { [roomId: string]: number };
 };
 
 const ChatRoom = ({
@@ -40,6 +41,7 @@ const ChatRoom = ({
   lastSeen,
   onSelectUser,
   onSendMessage,
+  roomUnread,
 }: TChatRoom) => {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -60,6 +62,7 @@ const ChatRoom = ({
               selectedUserId={selectedUser?._id || ""}
               onlineUserIds={onlineUserIds}
               onSelectUser={onSelectUser}
+              roomUnread={roomUnread}
             />
           </aside>
 
@@ -107,9 +110,7 @@ const ChatRoom = ({
               )}
             </div>
 
-            {selectedUser && (
-              <MessageInput onSend={onSendMessage} />
-            )}
+            {selectedUser && <MessageInput onSend={onSendMessage} />}
           </section>
         </main>
       </div>
