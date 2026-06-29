@@ -29,6 +29,12 @@ type TChatRoom = {
   onSelectUser: (user: User) => void;
   onSendMessage: (text: string) => void;
   roomUnread: { [roomId: string]: number };
+  roomId: string;
+};
+
+const makeRoomId = (a: string, b: string) => {
+  const [x, y] = [String(a), String(b)].sort();
+  return `dm:${x}:${y}`;
 };
 
 const ChatRoom = ({
@@ -42,12 +48,18 @@ const ChatRoom = ({
   onSelectUser,
   onSendMessage,
   roomUnread,
+  roomId,
 }: TChatRoom) => {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const currentRoomUnread =
+    selectedUser && roomId
+      ? roomUnread[makeRoomId(currentUserId, selectedUser._id)] || 0
+      : 0;
 
   return (
     <div className="h-svh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -69,13 +81,21 @@ const ChatRoom = ({
           <section className="flex flex-1 flex-col">
             <div className="border-b border-white/10 px-5 py-4">
               {selectedUser ? (
-                <div>
-                  <h2 className="text-lg font-semibold">{selectedUser.name}</h2>
-                  <p className="text-sm text-slate-400">
-                    {onlineUserIds.includes(selectedUser._id)
-                      ? "Online now"
-                      : "Offline"}
-                  </p>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold">{selectedUser.name}</h2>
+                    <p className="text-sm text-slate-400">
+                      {onlineUserIds.includes(selectedUser._id)
+                        ? "Online now"
+                        : "Offline"}
+                    </p>
+                  </div>
+
+                  {currentRoomUnread > 0 && (
+                    <span className="rounded-full bg-cyan-500 px-3 py-1 text-xs font-semibold text-slate-950">
+                      {currentRoomUnread} new
+                    </span>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -110,7 +130,9 @@ const ChatRoom = ({
               )}
             </div>
 
-            {selectedUser && <MessageInput onSend={onSendMessage} />}
+            {selectedUser && (
+              <MessageInput onSend={onSendMessage} disabled={!roomId} />
+            )}
           </section>
         </main>
       </div>
