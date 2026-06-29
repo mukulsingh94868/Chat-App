@@ -47,7 +47,6 @@ const JoinForm = () => {
     try {
       const apiCall = mode === "register" ? loginRegister : loginAuth;
       const response: any = await apiCall(payload);
-      console.log("res123", response);
 
       if (response?.statusCode === 200 || response?.statusCode === 201) {
         toast.success(response?.message);
@@ -59,9 +58,10 @@ const JoinForm = () => {
           setMode("login");
         } else {
           setCookie("authToken", response?.token);
-          console.log('sdfsdfsdf')
           router.push("/chats");
         }
+      } else {
+        toast.error(response?.message);
       }
     } catch (error) {
       console.error("error", error);
@@ -99,7 +99,7 @@ const JoinForm = () => {
               type="email"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="Enter Your Email"
               className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
               autoFocus
             />
@@ -117,7 +117,7 @@ const JoinForm = () => {
                 id={nameId}
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                placeholder="e.g. Mukul"
+                placeholder="Enter Your Name"
                 className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
               />
             </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ChatHeader from "./ChatHeader";
@@ -56,6 +56,22 @@ const ChatRoom = ({
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [showList, setShowList] = useState(true);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = typeof window !== "undefined" && window.innerWidth < 640;
+      setIsMobile(mobile);
+      // keep list visible by default on desktop, and on mobile keep previous state
+      if (!mobile) setShowList(true);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const currentRoomUnread =
     selectedUser && roomId
       ? roomUnread[makeRoomId(currentUserId, selectedUser._id)] || 0
@@ -67,23 +83,54 @@ const ChatRoom = ({
         <ChatHeader username={username} lastSeen={lastSeen} />
 
         <main className="mt-4 flex flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur">
-          <aside className="w-full max-w-xs border-r border-white/10 bg-slate-950/30">
+          {/* User list: hide on mobile when chat view is active */}
+          <aside
+            className={
+              // On mobile when showing the list, let it take full width (remove max-w-xs)
+              isMobile
+                ? showList
+                  ? "w-full border-r border-white/10 bg-slate-950/30"
+                  : "hidden sm:block w-full max-w-xs border-r border-white/10 bg-slate-950/30"
+                : "w-full max-w-xs border-r border-white/10 bg-slate-950/30"
+            }
+          >
             <UserList
               users={users}
               currentUserId={currentUserId}
               selectedUserId={selectedUser?._id || ""}
               onlineUserIds={onlineUserIds}
-              onSelectUser={onSelectUser}
+              onSelectUser={(user) => {
+                onSelectUser(user);
+                // on mobile, switch to chat view after selecting a user
+                if (isMobile) setShowList(false);
+              }}
               roomUnread={roomUnread}
             />
           </aside>
 
-          <section className="flex flex-1 flex-col">
+          <section
+            className={
+              isMobile && showList
+                ? "hidden sm:flex flex-1 flex-col"
+                : "flex flex-1 flex-col"
+            }
+          >
             <div className="border-b border-white/10 px-5 py-4">
               {selectedUser ? (
                 <div className="flex items-center justify-between gap-4">
+                  {/* Back button visible on mobile to return to list */}
+                  {isMobile && (
+                    <button
+                      onClick={() => setShowList(true)}
+                      className="mr-2 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1 text-sm sm:hidden"
+                    >
+                      Back
+                    </button>
+                  )}
                   <div>
-                    <h2 className="text-lg font-semibold">{selectedUser.name}</h2>
+                    <h2 className="text-lg font-semibold">
+                      {selectedUser.name}
+                    </h2>
                     <p className="text-sm text-slate-400">
                       {onlineUserIds.includes(selectedUser._id)
                         ? "Online now"
@@ -110,10 +157,7 @@ const ChatRoom = ({
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
               {selectedUser ? (
                 <>
-                  <MessageList
-                    messages={messages}
-                    currentUsername={username}
-                  />
+                  <MessageList messages={messages} currentUsername={username} />
                   <div ref={messageEndRef} />
                 </>
               ) : (
