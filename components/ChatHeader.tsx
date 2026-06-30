@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthStore } from "@/store/authStore";
 import { deleteCookie } from "cookies-next";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -11,9 +12,12 @@ type TChatHeader = {
 
 const ChatHeader = ({ username, lastSeen }: TChatHeader) => {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const userLogout = useAuthStore((state) => state.logout);
 
   const handleLogout = () => {
     deleteCookie("authToken");
+    userLogout();
     router.push("/");
   };
 
@@ -35,13 +39,21 @@ const ChatHeader = ({ username, lastSeen }: TChatHeader) => {
             Logout
           </button>
 
-          <div className="h-8.75 w-8.75 border rounded-[22px] text-center cursor-pointer" onClick={() => router.push("/change-profile")}>
+          <div
+            className="h-8.75 w-8.75 border rounded-[22px] text-center cursor-pointer"
+            onClick={() => router.push("/change-profile")}
+          >
             <Image
-              src="/assets/goku.jpg"
-              alt="Profile"
+              src={
+                user?.profileImage
+                  ? `http://localhost:5000/uploads/${user.profileImage}`
+                  : "/assets/default.jpg"
+              }
               width={40}
               height={40}
-              className="rounded-full object-cover"
+              className="rounded-full h-full border border-white/10 object-cover shadow-lg"
+              alt="profile"
+              unoptimized
             />
           </div>
         </div>
