@@ -42,3 +42,17 @@ export const getUsersList = async () => {
     console.error("error123", error);
   }
 };
+
+
+export const updateProfile = async (payload: Record<string, unknown>) => {
+  try {
+    const cookieStore = await cookies();
+    const token = (await cookieStore.get("token")?.value) ?? "";
+    const response = await apiRequest("post", `auth//profile-image`, payload, {
+      Authorization: `Bearer ${token ?? ""}`,
+    });
+    return response ?? {};
+  } catch (error) {
+    console.error("error123", error);
+  }
+};

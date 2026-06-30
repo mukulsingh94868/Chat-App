@@ -1,6 +1,7 @@
 "use client";
 
 import { loginAuth, loginRegister } from "@/actions/authActions";
+import { useAuthStore } from "@/store/authStore";
 import { setCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { type SyntheticEvent, useId, useState } from "react";
@@ -18,6 +19,8 @@ const JoinForm = () => {
   const [nameInput, setNameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [message, setMessage] = useState("");
+
+  const setUser = useAuthStore((state) => state.setUser);
 
   const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,7 +50,7 @@ const JoinForm = () => {
     try {
       const apiCall = mode === "register" ? loginRegister : loginAuth;
       const response: any = await apiCall(payload);
-
+      console.log('response21222', response);
       if (response?.statusCode === 200 || response?.statusCode === 201) {
         toast.success(response?.message);
         setEmailInput("");
@@ -58,6 +61,12 @@ const JoinForm = () => {
           setMode("login");
         } else {
           setCookie("authToken", response?.token);
+          setUser({
+            userId: response.data.userId,
+            name: response.data.name,
+            email: response.data.email,
+            profileImage: response.data.profileImage,
+          });
           router.push("/chats");
         }
       } else {

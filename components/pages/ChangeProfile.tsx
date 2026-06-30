@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useAuthStore } from "@/store/authStore";
+import { getCookie } from "cookies-next";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const ChangeProfile = () => {
   const [preview, setPreview] = useState<string | null>(null);
@@ -10,6 +13,8 @@ const ChangeProfile = () => {
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
+  const updateProfileImage = useAuthStore((state) => state.updateProfileImage);
+  const user = useAuthStore((state) => state.user);
 
   const handleSelect = () => {
     inputRef.current?.click();
@@ -31,24 +36,58 @@ const ChangeProfile = () => {
   };
 
   const handleSave = async () => {
-    if (!file) return;
-    setSaving(true);
-    try {
-      const form = new FormData();
-      form.append("avatar", file);
+    if (!file) {
+      alert("Please select an image first.");
+      return;
+    }
 
-      // Example: POST to /api/profile/avatar (adjust server route if needed)
-      await fetch("/api/profile/avatar", {
-        method: "POST",
-        body: form,
-      });
-    } catch (err) {
-      console.error(err);
+    try {
+      setSaving(true);
+
+      const token = getCookie("authToken");
+
+      const formData = new FormData();
+      formData.append("profileImage", file);
+
+      const response = await fetch(
+        "http://localhost:5000/api/auth/profile-image",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Upload failed");
+      }
+
+      if (result.data.profileImage) {
+        setPreview(`http://localhost:5000/uploads/${result.data.profileImage}`);
+      }
+
+      updateProfileImage(result.data.profileImage);
+      toast.success("Profile image updated successfully!");
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Something went wrong");
     } finally {
       setSaving(false);
     }
   };
 
+  useEffect(() => {
+    if (user?.profileImage) {
+      const imageUrl = `http://localhost:5000/uploads/${user?.profileImage}`;
+      setPreview(imageUrl);
+    } else {
+      setPreview("/assets/default.jpg");
+    }
+  }, [user]);
   return (
     <main className="min-h-screen flex items-start justify-center p-6 md:p-8">
       <section className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8 backdrop-blur">
@@ -75,20 +114,16 @@ const ChangeProfile = () => {
           <div className="col-span-1 flex flex-col items-center">
             <div className="relative">
               <div className="h-32 w-32 md:h-40 md:w-40 rounded-full overflow-hidden border border-white/10 bg-white/3 shadow-lg">
-                {preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={preview}
-                    alt="preview"
-                    className="h-full w-full object-cover"
+                <div className="relative h-32 w-32 md:h-40 md:w-40">
+                  <Image
+                    src={preview || "/assets/default.jpg"}
+                    alt="Profile"
+                    fill
+                    className="rounded-full border border-white/10 object-cover shadow-lg"
+                    sizes="160px"
+                    unoptimized
                   />
-                ) : (
-                  <img
-                    src="/assets/goku.jpg"
-                    alt="current"
-                    className="h-full w-full object-cover"
-                  />
-                )}
+                </div>
               </div>
             </div>
 
