@@ -50,7 +50,7 @@ const ChangeProfile = () => {
       formData.append("profileImage", file);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/profile-image",
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/profile-image`,
         {
           method: "POST",
           headers: {
@@ -67,7 +67,7 @@ const ChangeProfile = () => {
       }
 
       if (result.data.profileImage) {
-        setPreview(`http://localhost:5000/uploads/${result.data.profileImage}`);
+        setPreview(`${process.env.NEXT_PUBLIC_BASE_URL}/uploads/${result.data.profileImage}`);
       }
 
       updateProfileImage(result.data.profileImage);
@@ -82,7 +82,7 @@ const ChangeProfile = () => {
 
   useEffect(() => {
     if (user?.profileImage) {
-      const imageUrl = `http://localhost:5000/uploads/${user?.profileImage}`;
+      const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/uploads/${user?.profileImage}`;
       setPreview(imageUrl);
     } else {
       setPreview("/assets/default.jpg");
