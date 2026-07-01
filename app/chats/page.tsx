@@ -52,6 +52,7 @@ const Chat = () => {
   const [roomId, setRoomId] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [roomUnread, setRoomUnread] = useState<RoomUnread>({});
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
 
   const roomIdRef = useRef(roomId);
 
@@ -93,7 +94,7 @@ const Chat = () => {
     };
   }, [username, userId]);
 
-  // 3) socket listeners (online, join, message)
+  // 3) socket listeners (online, join, message, typing)
   useEffect(() => {
     const handleOnlineUsers = (ids: string[]) => {
       setOnlineUserIds(ids);
@@ -103,6 +104,7 @@ const Chat = () => {
       // this is the only active room now
       setRoomId(roomId);
       setMessages([]); // clear previous messages (snapchat behavior)
+      setIsPartnerTyping(false);
 
       // reset unread for this room
       setRoomUnread((prev) => ({
@@ -132,14 +134,41 @@ const Chat = () => {
       }
     };
 
+    const handleTyping = (payload: {
+      roomId: string;
+      userId: string;
+      username: string;
+      isTyping: boolean;
+    }) => {
+      const activeRoomId = roomIdRef.current;
+      if (payload.roomId !== activeRoomId) return;
+      // only show typing when in the same room
+      setIsPartnerTyping(payload.isTyping);
+    };
+
+    const handleStopTyping = (payload: {
+      roomId: string;
+      userId: string;
+      username: string;
+      isTyping: boolean;
+    }) => {
+      const activeRoomId = roomIdRef.current;
+      if (payload.roomId !== activeRoomId) return;
+      setIsPartnerTyping(false);
+    };
+
     socket.on("online-users", handleOnlineUsers);
     socket.on("joined-dm", handleJoinedDm);
     socket.on("dm-message", handleDmMessage);
+    socket.on("typing", handleTyping);
+    socket.on("stop-typing", handleStopTyping);
 
     return () => {
       socket.off("online-users", handleOnlineUsers);
       socket.off("joined-dm", handleJoinedDm);
       socket.off("dm-message", handleDmMessage);
+      socket.off("typing", handleTyping);
+      socket.off("stop-typing", handleStopTyping);
     };
   }, []);
 
@@ -167,6 +196,7 @@ const Chat = () => {
     // clear visible chat (snapchat behavior)
     setMessages([]);
     setRoomId("");
+    setIsPartnerTyping(false);
 
     socket.emit("join-dm", { toUserId: selectedUser._id });
   }, [selectedUser]);
@@ -185,6 +215,16 @@ const Chat = () => {
       roomId,
       text,
     });
+  };
+
+  // 8) typing events
+  const handleTypingEvent = (isTyping: boolean) => {
+    if (!roomId) return;
+    if (isTyping) {
+      socket.emit("typing", { roomId });
+    } else {
+      socket.emit("stop-typing", { roomId });
+    }
   };
 
   const lastSeen = useMemo(() => {
@@ -206,6 +246,8 @@ const Chat = () => {
       onSendMessage={handleSendMessage}
       roomUnread={roomUnread}
       roomId={roomId}
+      isPartnerTyping={isPartnerTyping}
+      onTyping={handleTypingEvent}
     />
   );
 };
