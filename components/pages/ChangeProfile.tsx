@@ -67,7 +67,7 @@ const ChangeProfile = () => {
       }
 
       if (result.data.profileImage) {
-        setPreview(`${process.env.NEXT_PUBLIC_BASE_URL}/uploads/${result.data.profileImage}`);
+        setPreview(result.data.profileImage);
       }
 
       updateProfileImage(result.data.profileImage);
@@ -82,7 +82,7 @@ const ChangeProfile = () => {
 
   useEffect(() => {
     if (user?.profileImage) {
-      const imageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/uploads/${user?.profileImage}`;
+      const imageUrl = user?.profileImage;
       setPreview(imageUrl);
     } else {
       setPreview("/assets/default.jpg");

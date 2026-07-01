@@ -46,7 +46,7 @@ const ChatHeader = ({ username, lastSeen }: TChatHeader) => {
             <Image
               src={
                 user?.profileImage
-                  ? `${process.env.NEXT_PUBLIC_BASE_URL}/uploads/${user.profileImage}`
+                  ? user?.profileImage
                   : "/assets/default.jpg"
               }
               width={40}
