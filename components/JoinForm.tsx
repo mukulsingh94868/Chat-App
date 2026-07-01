@@ -50,7 +50,6 @@ const JoinForm = () => {
     try {
       const apiCall = mode === "register" ? loginRegister : loginAuth;
       const response: any = await apiCall(payload);
-      console.log('response21222', response);
       if (response?.statusCode === 200 || response?.statusCode === 201) {
         toast.success(response?.message);
         setEmailInput("");

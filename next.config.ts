@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
         hostname: "chat-app-backend-105f.onrender.com",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
 };
