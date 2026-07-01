@@ -1,14 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 type TMessageInput = {
   onSend: (text: string) => void;
   disabled?: boolean;
+  onTyping?: (isTyping: boolean) => void;
 };
 
-const MessageInput = ({ onSend, disabled = false }: TMessageInput) => {
+const TYPING_DEBOUNCE_MS = 1000;
+
+const MessageInput = ({
+  onSend,
+  disabled = false,
+  onTyping,
+}: TMessageInput) => {
   const [message, setMessage] = useState("");
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef(false);
+
+  const emitTyping = (isTyping: boolean) => {
+    if (!onTyping) return;
+    if (isTypingRef.current === isTyping) return; // no change
+    isTypingRef.current = isTyping;
+    onTyping(isTyping);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +35,11 @@ const MessageInput = ({ onSend, disabled = false }: TMessageInput) => {
 
     onSend(text);
     setMessage("");
+    emitTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -28,10 +49,46 @@ const MessageInput = ({ onSend, disabled = false }: TMessageInput) => {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setMessage(value);
+
+    if (disabled) return;
+
+    if (value.trim().length > 0) {
+      emitTyping(true);
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        emitTyping(false);
+        typingTimeoutRef.current = null;
+      }, TYPING_DEBOUNCE_MS);
+    } else {
+      emitTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      emitTyping(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="border-t border-white/10 p-4 sm:p-5"
+      className="p-4 sm:p-5"
     >
       <div className="flex items-end gap-3">
         <div className="flex-1">
@@ -41,7 +98,7 @@ const MessageInput = ({ onSend, disabled = false }: TMessageInput) => {
           <textarea
             rows={1}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleChange}
             placeholder={
               disabled ? "Connecting to chat..." : "Write a message..."
             }

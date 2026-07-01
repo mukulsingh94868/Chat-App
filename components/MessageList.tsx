@@ -28,6 +28,14 @@ const MessageList = ({ messages, currentUsername }: TMessageList) => {
   return (
     <div className="space-y-3">
       {messages.map((m, index) => {
+        console.log("bbb", m);
+        const time = m.createdAt
+          ? new Date(m.createdAt).toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "";
         const isMe = m.fromUsername === currentUsername;
 
         return (
@@ -44,6 +52,11 @@ const MessageList = ({ messages, currentUsername }: TMessageList) => {
                 <span className="font-semibold">{m.fromUsername}</span>
               </div>
               <p className="break-words text-sm leading-relaxed">{m.text}</p>
+              {time && (
+                <span className="mt-1 block text-right text-[10px] opacity-80">
+                  {time}
+                </span>
+              )}
             </div>
           </div>
         );

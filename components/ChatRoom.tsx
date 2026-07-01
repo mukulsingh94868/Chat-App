@@ -30,6 +30,8 @@ type TChatRoom = {
   onSendMessage: (text: string) => void;
   roomUnread: { [roomId: string]: number };
   roomId: string;
+  isPartnerTyping: boolean;
+  onTyping: (isTyping: boolean) => void;
 };
 
 const makeRoomId = (a: string, b: string) => {
@@ -49,6 +51,8 @@ const ChatRoom = ({
   onSendMessage,
   roomUnread,
   roomId,
+  isPartnerTyping,
+  onTyping,
 }: TChatRoom) => {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -63,7 +67,6 @@ const ChatRoom = ({
     const handleResize = () => {
       const mobile = typeof window !== "undefined" && window.innerWidth < 640;
       setIsMobile(mobile);
-      // keep list visible by default on desktop, and on mobile keep previous state
       if (!mobile) setShowList(true);
     };
 
@@ -83,10 +86,9 @@ const ChatRoom = ({
         <ChatHeader username={username} lastSeen={lastSeen} />
 
         <main className="mt-4 flex flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur">
-          {/* User list: hide on mobile when chat view is active */}
+          {/* User list */}
           <aside
             className={
-              // On mobile when showing the list, let it take full width (remove max-w-xs)
               isMobile
                 ? showList
                   ? "w-full border-r border-white/10 bg-slate-950/30"
@@ -101,7 +103,6 @@ const ChatRoom = ({
               onlineUserIds={onlineUserIds}
               onSelectUser={(user) => {
                 onSelectUser(user);
-                // on mobile, switch to chat view after selecting a user
                 if (isMobile) setShowList(false);
               }}
               roomUnread={roomUnread}
@@ -118,7 +119,6 @@ const ChatRoom = ({
             <div className="border-b border-white/10 px-5 py-4">
               {selectedUser ? (
                 <div className="flex items-center justify-between gap-4">
-                  {/* Back button visible on mobile to return to list */}
                   {isMobile && (
                     <button
                       onClick={() => setShowList(true)}
@@ -157,7 +157,10 @@ const ChatRoom = ({
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
               {selectedUser ? (
                 <>
-                  <MessageList messages={messages} currentUsername={username} />
+                  <MessageList
+                    messages={messages}
+                    currentUsername={username}
+                  />
                   <div ref={messageEndRef} />
                 </>
               ) : (
@@ -175,7 +178,19 @@ const ChatRoom = ({
             </div>
 
             {selectedUser && (
-              <MessageInput onSend={onSendMessage} disabled={!roomId} />
+              <div className="border-t border-white/10">
+                {/* Typing indicator row */}
+                {isPartnerTyping && (
+                  <div className="px-5 py-2 text-xs text-slate-400">
+                    {selectedUser.name} is typing...
+                  </div>
+                )}
+                <MessageInput
+                  onSend={onSendMessage}
+                  disabled={!roomId}
+                  onTyping={onTyping}
+                />
+              </div>
             )}
           </section>
         </main>
