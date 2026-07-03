@@ -18,6 +18,18 @@ type ChatMessage = {
   createdAt?: string;
 };
 
+type Invitation = {
+  _id: string;
+  fromUserId: User;
+  toUserId: User;
+  status: string;
+};
+
+type InvitationsData = {
+  incoming: Invitation[];
+  outgoing: Invitation[];
+};
+
 type TChatRoom = {
   username: string;
   currentUserId: string;
@@ -32,6 +44,12 @@ type TChatRoom = {
   roomId: string;
   isPartnerTyping: boolean;
   onTyping: (isTyping: boolean) => void;
+  usersListData: any;
+  friendIds: string[];
+  pendingInvites: { toUserId: string }[];
+  invitations: InvitationsData;
+  onSendInvite?: (toUserId: string) => void;
+  onRespondInvite: (invitationId: string, action: "accept" | "reject") => void;
 };
 
 const makeRoomId = (a: string, b: string) => {
@@ -53,6 +71,11 @@ const ChatRoom = ({
   roomId,
   isPartnerTyping,
   onTyping,
+  usersListData,
+  friendIds,
+  pendingInvites,
+  invitations,
+  onRespondInvite,
 }: TChatRoom) => {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -83,7 +106,16 @@ const ChatRoom = ({
   return (
     <div className="h-svh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
       <div className="mx-auto flex h-svh w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <ChatHeader username={username} lastSeen={lastSeen} />
+        <ChatHeader
+          username={username}
+          lastSeen={lastSeen}
+          usersListData={usersListData}
+          currentUserId={currentUserId}
+          friendIds={friendIds}
+          pendingInvites={pendingInvites}
+          invitations={invitations}
+          onRespondInvite={onRespondInvite}
+        />
 
         <main className="mt-4 flex flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur">
           {/* User list */}
@@ -157,10 +189,7 @@ const ChatRoom = ({
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
               {selectedUser ? (
                 <>
-                  <MessageList
-                    messages={messages}
-                    currentUsername={username}
-                  />
+                  <MessageList messages={messages} currentUsername={username} />
                   <div ref={messageEndRef} />
                 </>
               ) : (
@@ -179,7 +208,6 @@ const ChatRoom = ({
 
             {selectedUser && (
               <div className="border-t border-white/10">
-                {/* Typing indicator row */}
                 {isPartnerTyping && (
                   <div className="px-5 py-2 text-xs text-slate-400">
                     {selectedUser.name} is typing...
