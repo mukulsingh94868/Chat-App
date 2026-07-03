@@ -28,7 +28,6 @@ const MessageList = ({ messages, currentUsername }: TMessageList) => {
   return (
     <div className="space-y-3">
       {messages.map((m, index) => {
-        console.log("bbb", m);
         const time = m.createdAt
           ? new Date(m.createdAt).toLocaleTimeString("en-IN", {
               hour: "2-digit",
