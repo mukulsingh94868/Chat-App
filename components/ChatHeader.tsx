@@ -26,7 +26,6 @@ type TChatHeader = {
   friendIds: string[];
   pendingInvites: { toUserId: string }[];
   invitations: InvitationsData;
-  onRespondInvite: (invitationId: string, action: "accept" | "reject") => void;
 };
 
 const ChatHeader = ({
@@ -37,7 +36,6 @@ const ChatHeader = ({
   friendIds,
   pendingInvites,
   invitations,
-  onRespondInvite,
 }: TChatHeader) => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -98,7 +96,6 @@ const ChatHeader = ({
           friendIds={friendIds}
           pendingInvites={pendingInvites}
           invitations={invitations}
-          onRespondInvite={onRespondInvite}
         />
       </div>
     </header>

@@ -236,64 +236,6 @@ const ChatRoomArea = ({
     }
   }, [username, friendListData]);
 
-  // 11) accept / reject invitation (incoming)
-  const handleRespondInvite = async (
-    invitationId: string,
-    action: "accept" | "reject"
-  ) => {
-    try {
-      const token = getCookie("authToken");
-      if (!token) return;
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/friends/invitations/${invitationId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: action === "accept" ? "accepted" : "rejected",
-          }),
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) {
-        console.error("Respond invite error:", data?.message || "Unknown error");
-        return;
-      }
-
-      // After responding, refresh invitations (and friends if accepted)
-      const invRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/friends/invitations`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const invData = await invRes.json();
-      setInvitations(invData.data || { incoming: [], outgoing: [] });
-
-      if (action === "accept") {
-        const friendsRes = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/friends/get-friend-users`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const friendsData = await friendsRes.json();
-        setUsers(friendsData.data || []);
-      }
-    } catch (error) {
-      console.error("Respond invite error:", error);
-    }
-  };
-
   const lastSeen = useMemo(() => {
     return onlineUserIds.length ? "Live" : "No users online";
   }, [onlineUserIds.length]);
@@ -325,7 +267,6 @@ const ChatRoomArea = ({
         friendIds={friendIds}
         pendingInvites={pendingInvites}
         invitations={invitations}
-        onRespondInvite={handleRespondInvite}
       />
     </div>
   );
