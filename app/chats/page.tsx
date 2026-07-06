@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getFriendList, getInvitationsList, getUsersList } from "@/actions/authActions";
 import ChatRoomArea from "@/components/ChatRoomArea";
 

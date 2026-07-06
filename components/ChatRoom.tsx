@@ -48,8 +48,6 @@ type TChatRoom = {
   friendIds: string[];
   pendingInvites: { toUserId: string }[];
   invitations: InvitationsData;
-  onSendInvite?: (toUserId: string) => void;
-  onRespondInvite: (invitationId: string, action: "accept" | "reject") => void;
 };
 
 const makeRoomId = (a: string, b: string) => {
@@ -74,8 +72,7 @@ const ChatRoom = ({
   usersListData,
   friendIds,
   pendingInvites,
-  invitations,
-  onRespondInvite,
+  invitations
 }: TChatRoom) => {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -114,7 +111,6 @@ const ChatRoom = ({
           friendIds={friendIds}
           pendingInvites={pendingInvites}
           invitations={invitations}
-          onRespondInvite={onRespondInvite}
         />
 
         <main className="mt-4 flex flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur">

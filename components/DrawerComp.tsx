@@ -1,4 +1,4 @@
-import { sendInvite } from "@/actions/authActions";
+import { acceptRejectInvite, sendInvite } from "@/actions/authActions";
 import { Button } from "./ui/button";
 import {
   Sheet,
@@ -11,11 +11,13 @@ import {
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useEffect, useState } from "react";
 
 type User = {
   _id: string;
   name: string;
   email: string;
+  profileImage?: string;
 };
 
 type PendingInvite = {
@@ -27,6 +29,7 @@ type Invitation = {
   fromUserId: User;
   toUserId: User;
   status: string;
+  createdAt?: string; // for date/time display
 };
 
 type InvitationsData = {
@@ -41,7 +44,6 @@ type TDrawerComp = {
   friendIds?: string[];
   pendingInvites?: PendingInvite[];
   invitations?: InvitationsData;
-  onRespondInvite?: (invitationId: string, action: "accept" | "reject") => void;
 };
 
 const DrawerComp = ({
@@ -51,17 +53,46 @@ const DrawerComp = ({
   friendIds = [],
   pendingInvites = [],
   invitations,
-  onRespondInvite,
 }: TDrawerComp) => {
-  const pathName = usePathname(); // Get the current pathname
+  const pathName = usePathname();
+
+  // 1) Local state copies so Drawer can update itself
+  const [visibleUsers, setVisibleUsers] = useState<User[]>(usersListData || []);
+  const [visibleInvitations, setVisibleInvitations] = useState<InvitationsData | undefined>(invitations);
+
+  // When props change (e.g. on first open), sync local state
+  useEffect(() => {
+    setVisibleUsers(usersListData || []);
+  }, [usersListData]);
+
+  useEffect(() => {
+    setVisibleInvitations(invitations);
+  }, [invitations]);
+
   const friendIdSet = new Set(friendIds);
   const pendingToIds = new Set(pendingInvites.map((p) => p.toUserId));
 
-  const inviteCandidates = usersListData.filter(
-    (u) => u._id !== currentUserId && !friendIdSet.has(u._id),
+  const incomingInvitations = visibleInvitations?.incoming || [];
+
+  const acceptedFromIds = new Set(
+    (visibleInvitations?.incoming || [])
+      .filter((inv) => inv.status === "accepted")
+      .map((inv) => inv.fromUserId._id)
+  );
+  const acceptedToIds = new Set(
+    (visibleInvitations?.outgoing || [])
+      .filter((inv) => inv.status === "accepted")
+      .map((inv) => inv.toUserId._id)
   );
 
-  const incomingInvitations = invitations?.incoming || [];
+  // Use visibleUsers instead of usersListData, and remove accepted ones
+  const inviteCandidates = visibleUsers.filter((u) => {
+    const isSelf = u._id === currentUserId;
+    const isFriend = friendIdSet.has(u._id);
+    const hasAccepted =
+      acceptedFromIds.has(u._id) || acceptedToIds.has(u._id);
+    return !isSelf && !isFriend && !hasAccepted;
+  });
 
   const handleSendInvite = async (toUserId: string) => {
     try {
@@ -70,10 +101,71 @@ const DrawerComp = ({
       console.log("Invite response:", response);
       if (response?.statusCode === 201) {
         toast.success(response?.message || "Invite sent successfully!");
+        // Optional: you could append a new outgoing invite into visibleInvitations here
       }
     } catch (error) {
       console.error("Send invite error:", error);
     }
+  };
+
+  const acceptReject = async (
+    invitationId: string,
+    action: "accept" | "reject"
+  ) => {
+    const payload = {
+      requestId: invitationId,
+    };
+    try {
+      const result: any = await acceptRejectInvite(payload, action, pathName);
+      console.log("result", result);
+      if (result?.statusCode === 200) {
+        toast.success(result?.message || "Invite response sent successfully!");
+
+        // 2a) Update local invitations list: remove or mark this invite
+        setVisibleInvitations((prev) => {
+          if (!prev) return prev;
+          const updatedIncoming = prev.incoming.filter(
+            (inv) => inv._id !== invitationId
+          );
+
+          // If accepted, also mark that user as accepted in outgoing (if present)
+          let updatedOutgoing = prev.outgoing;
+          if (action === "accept") {
+            updatedOutgoing = prev.outgoing.map((inv) =>
+              inv._id === invitationId
+                ? { ...inv, status: "accepted" }
+                : inv
+            );
+          }
+
+          return {
+            incoming: updatedIncoming,
+            outgoing: updatedOutgoing,
+          };
+        });
+
+        // 2b) If accepted, remove that user from visibleUsers so they disappear from “All users”
+        if (action === "accept") {
+          setVisibleUsers((prev) => {
+            // find the invitation to know which user to remove
+            const originalInv = incomingInvitations.find(
+              (inv) => inv._id === invitationId
+            );
+            if (!originalInv) return prev;
+            const acceptedUserId = originalInv.fromUserId._id;
+            return prev.filter((u) => u._id !== acceptedUserId);
+          });
+        }
+      }
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
+
+  const formatDateTime = (createdAt?: string) => {
+    if (!createdAt) return "";
+    const d = new Date(createdAt);
+    return d.toLocaleString(); // customize if needed
   };
 
   return (
@@ -145,8 +237,8 @@ const DrawerComp = ({
 
                       <Button
                         type="button"
-                        disabled={!handleSendInvite || isPending}
-                        onClick={() => handleSendInvite?.(user._id)}
+                        disabled={isPending}
+                        onClick={() => handleSendInvite(user._id)}
                         className="rounded-full bg-cyan-500 px-3 py-1 text-[11px] font-semibold text-slate-950 hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-slate-600"
                       >
                         {isPending ? "Pending" : "Send invite"}
@@ -181,30 +273,30 @@ const DrawerComp = ({
                       <p className="truncate text-[11px] text-slate-400">
                         {req.fromUserId.email}
                       </p>
+                      {req.createdAt && (
+                        <p className="mt-1 text-[10px] text-slate-500">
+                          Sent at {formatDateTime(req.createdAt)}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex flex-col items-end gap-1">
                       <div className="flex gap-1">
                         <Button
                           type="button"
-                          disabled={!onRespondInvite}
-                          onClick={() => onRespondInvite?.(req._id, "accept")}
-                          className="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold text-slate-950 hover:bg-emerald-400 disabled:cursor-not-allowed"
+                          onClick={() => acceptReject(req._id, "accept")}
+                          className="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold text-slate-950 hover:bg-emerald-400"
                         >
                           Accept
                         </Button>
                         <Button
                           type="button"
-                          disabled={!onRespondInvite}
-                          onClick={() => onRespondInvite?.(req._id, "reject")}
-                          className="rounded-full bg-rose-500 px-2.5 py-0.5 text-[11px] font-semibold text-slate-950 hover:bg-rose-400 disabled:cursor-not-allowed"
+                          onClick={() => acceptReject(req._id, "reject")}
+                          className="rounded-full bg-rose-500 px-2.5 py-0.5 text-[11px] font-semibold text-slate-950 hover:bg-rose-400"
                         >
                           Reject
                         </Button>
                       </div>
-                      <span className="text-[10px] text-slate-400">
-                        Pending
-                      </span>
                     </div>
                   </div>
                 ))}
