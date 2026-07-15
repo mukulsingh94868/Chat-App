@@ -46,7 +46,6 @@ const ChatHeader = ({
     userLogout();
     router.push("/");
   };
-
   return (
     <header className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
       <div className="flex items-center justify-between gap-4">
