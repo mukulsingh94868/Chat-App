@@ -86,7 +86,7 @@ const ChatRoomArea = ({
     roomIdRef.current = roomId;
   }, [roomId]);
 
-  // 1) decode token
+
   useEffect(() => {
     const token = getCookie("authToken");
 
