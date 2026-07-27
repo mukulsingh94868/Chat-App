@@ -11,6 +11,7 @@ type User = {
   _id: string;
   name: string;
   email: string;
+  profileImage?: string;
 };
 
 type ChatMessage = {

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 type ChatMessage = {
   roomId: string;
   fromUserId: string;
@@ -9,9 +11,10 @@ type ChatMessage = {
 type TMessageList = {
   messages: ChatMessage[];
   currentUsername: string;
+  userProfileImages: { [userId: string]: string };
 };
 
-const MessageList = ({ messages, currentUsername }: TMessageList) => {
+const MessageList = ({ messages, currentUsername, userProfileImages }: TMessageList) => {
   if (messages.length === 0) {
     return (
       <div className="flex h-full min-h-[400px] items-center justify-center">
@@ -40,8 +43,18 @@ const MessageList = ({ messages, currentUsername }: TMessageList) => {
         return (
           <div
             key={index}
-            className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+            className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
           >
+            {!isMe && (
+              <Image
+                src={userProfileImages[m.fromUserId] || "/assets/default.jpg"}
+                width={32}
+                height={32}
+                className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover"
+                alt={m.fromUsername}
+                unoptimized
+              />
+            )}
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${
                 isMe ? "bg-cyan-500 text-slate-950" : "bg-slate-800 text-white"
@@ -57,6 +70,16 @@ const MessageList = ({ messages, currentUsername }: TMessageList) => {
                 </span>
               )}
             </div>
+            {isMe && (
+              <Image
+                src={userProfileImages[m.fromUserId] || "/assets/default.jpg"}
+                width={32}
+                height={32}
+                className="h-8 w-8 shrink-0 rounded-full border border-white/10 object-cover"
+                alt={m.fromUsername}
+                unoptimized
+              />
+            )}
           </div>
         );
       })}

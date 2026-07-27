@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import ChatHeader from "./ChatHeader";
 import UserList from "./UserList";
+import { useAuthStore } from "@/store/authStore";
 
 type User = {
   _id: string;
   name: string;
   email: string;
+  profileImage?: string;
 };
 
 type ChatMessage = {
@@ -75,6 +77,23 @@ const ChatRoom = ({
   invitations
 }: TChatRoom) => {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
+  const currentUser = useAuthStore((state) => state.user);
+
+  const userProfileImages = useMemo(() => {
+    const map: { [userId: string]: string } = {};
+    if (currentUser?.userId) {
+      map[currentUser.userId] = currentUser.profileImage || "/assets/default.jpg";
+    }
+    for (const u of users) {
+      if (u.profileImage) {
+        map[u._id] = u.profileImage;
+      }
+    }
+    if (selectedUser?.profileImage) {
+      map[selectedUser._id] = selectedUser.profileImage;
+    }
+    return map;
+  }, [currentUser, users, selectedUser]);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -185,7 +204,7 @@ const ChatRoom = ({
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
               {selectedUser ? (
                 <>
-                  <MessageList messages={messages} currentUsername={username} />
+                  <MessageList messages={messages} currentUsername={username} userProfileImages={userProfileImages} />
                   <div ref={messageEndRef} />
                 </>
               ) : (
