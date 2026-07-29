@@ -44,6 +44,8 @@ type TDrawerComp = {
   friendIds?: string[];
   pendingInvites?: PendingInvite[];
   invitations?: InvitationsData;
+  inviteCount?: number;
+  onOpen?: () => void;
 };
 
 const DrawerComp = ({
@@ -53,6 +55,8 @@ const DrawerComp = ({
   friendIds = [],
   pendingInvites = [],
   invitations,
+  inviteCount = 0,
+  onOpen,
 }: TDrawerComp) => {
   const pathName = usePathname();
 
@@ -169,13 +173,18 @@ const DrawerComp = ({
   };
 
   return (
-    <Sheet>
+    <Sheet onOpenChange={(open) => { if (open && onOpen) onOpen(); }}>
       <SheetTrigger asChild>
         <Button
           variant="outline"
-          className="border-white/15 bg-white/5 text-xs font-medium text-slate-50 hover:bg-white/10 hover:text-white sm:text-sm"
+          className="relative border-white/15 bg-white/5 text-xs font-medium text-slate-50 hover:bg-white/10 hover:text-white sm:text-sm"
         >
           {title}
+          {inviteCount > 0 && (
+            <span className="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-lg">
+              {inviteCount}
+            </span>
+          )}
         </Button>
       </SheetTrigger>
 

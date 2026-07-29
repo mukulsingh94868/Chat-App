@@ -50,6 +50,8 @@ type TChatRoom = {
   friendIds: string[];
   pendingInvites: { toUserId: string }[];
   invitations: InvitationsData;
+  inviteCount: number;
+  onClearInviteCount: () => void;
 };
 
 const makeRoomId = (a: string, b: string) => {
@@ -74,7 +76,9 @@ const ChatRoom = ({
   usersListData,
   friendIds,
   pendingInvites,
-  invitations
+  invitations,
+  inviteCount,
+  onClearInviteCount,
 }: TChatRoom) => {
   const messageEndRef = useRef<HTMLDivElement | null>(null);
   const currentUser = useAuthStore((state) => state.user);
@@ -130,6 +134,8 @@ const ChatRoom = ({
           friendIds={friendIds}
           pendingInvites={pendingInvites}
           invitations={invitations}
+          inviteCount={inviteCount}
+          onClearInviteCount={onClearInviteCount}
         />
 
         <main className="mt-4 flex flex-1 overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur">
