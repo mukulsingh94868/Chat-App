@@ -1,10 +1,11 @@
 "use client";
 
 import ChatRoom from "./ChatRoom";
+import { getInvitationsList } from "@/actions/authActions";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 type User = {
@@ -80,6 +81,9 @@ const ChatRoomArea = ({
     incoming: invitationsListData?.data?.incoming || [],
     outgoing: invitationsListData?.data?.outgoing || [],
   });
+  const [inviteCount, setInviteCount] = useState(
+    (invitationsListData?.data?.incoming || []).length
+  );
 
   const roomIdRef = useRef(roomId);
 
@@ -193,6 +197,44 @@ const ChatRoomArea = ({
     };
   }, []);
 
+  // 4b) listen for new-invite socket events + polling
+  useEffect(() => {
+    const handleNewInvite = () => {
+      setInviteCount((prev) => prev + 1);
+    };
+
+    socket.on("new-invite", handleNewInvite);
+
+    return () => {
+      socket.off("new-invite", handleNewInvite);
+    };
+  }, []);
+
+  // 4c) poll invitations every 30 seconds as fallback
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await getInvitationsList();
+        if (res?.data) {
+          const incoming = res.data.incoming || [];
+          setInvitations({
+            incoming,
+            outgoing: res.data.outgoing || [],
+          });
+          setInviteCount(incoming.length);
+        }
+      } catch {
+        // silently ignore polling errors
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const clearInviteCount = useCallback(() => {
+    setInviteCount(0);
+  }, []);
+
   // 5) when selectedUser changes, join DM + clear messages
   useEffect(() => {
     if (!selectedUser) return;
@@ -203,7 +245,6 @@ const ChatRoomArea = ({
 
     socket.emit("join-dm", { toUserId: selectedUser._id });
   }, [selectedUser]);
-
   // 6) selecting user from sidebar
   const handleSelectUser = (user: User) => {
     if (user._id === userId) return;
@@ -268,6 +309,8 @@ const ChatRoomArea = ({
         friendIds={friendIds}
         pendingInvites={pendingInvites}
         invitations={invitations}
+        inviteCount={inviteCount}
+        onClearInviteCount={clearInviteCount}
       />
     </div>
   );

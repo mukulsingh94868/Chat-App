@@ -81,11 +81,8 @@ const JoinForm = () => {
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
         <div className="mb-8">
-          <div className="mb-3 inline-flex rounded-full bg-cyan-400/15 px-3 py-1 text-xs font-medium text-cyan-300">
-            Socket.IO Chat
-          </div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {mode === "login" ? "Welcome back" : "Create your account"}
+            {mode === "login" ? "Great to see you again" : "Create your account"}
           </h1>
           <p className="mt-2 text-sm text-slate-400">
             {mode === "login"
