@@ -200,7 +200,7 @@ const ChatRoomArea = ({
   // 4b) listen for new-invite socket events + polling
   useEffect(() => {
     const handleNewInvite = () => {
-      setInviteCount((prev) => prev + 1);
+      setInviteCount((prev: any) => prev + 1);
     };
 
     socket.on("new-invite", handleNewInvite);
@@ -214,7 +214,7 @@ const ChatRoomArea = ({
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await getInvitationsList();
+        const res: any = await getInvitationsList();
         if (res?.data) {
           const incoming = res.data.incoming || [];
           setInvitations({
