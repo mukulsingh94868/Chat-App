@@ -124,7 +124,7 @@ const ChatRoom = ({
       : 0;
 
   return (
-    <div className="h-svh bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+    <div className="h-svh bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
       <div className="mx-auto flex h-svh w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
         <ChatHeader
           username={username}
@@ -214,7 +214,7 @@ const ChatRoom = ({
                   <div ref={messageEndRef} />
                 </>
               ) : (
-                <div className="flex h-full min-h-[400px] items-center justify-center text-center text-slate-400">
+                <div className="flex h-full min-h-100 items-center justify-center text-center text-slate-400">
                   <div>
                     <p className="text-lg font-medium text-slate-300">
                       No chat selected
